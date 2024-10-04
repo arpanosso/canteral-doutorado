@@ -44,6 +44,34 @@ glimpse(anomalias)
 #> $ anomalia   <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,…
 ```
 
+``` r
+skimr::skim(anomalias %>% 
+              select(xco2:lst_amp))
+```
+
+|  |  |
+|:---|:---|
+| Name | anomalias %\>% select(xco2… |
+| Number of rows | 79494 |
+| Number of columns | 5 |
+| \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ |  |
+| Column type frequency: |  |
+| numeric | 5 |
+| \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_ |  |
+| Group variables | None |
+
+Data summary
+
+**Variable type: numeric**
+
+| skim_variable | n_missing | complete_rate | mean | sd | p0 | p25 | p50 | p75 | p100 | hist |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|:---|
+| xco2 | 70124 | 0.12 | 403.28 | 2.16 | 394.46 | 402.07 | 403.56 | 404.64 | 411.71 | ▁▂▇▂▁ |
+| sif | 74786 | 0.06 | 0.86 | 0.31 | 0.00 | 0.65 | 0.85 | 1.11 | 1.50 | ▁▃▇▆▃ |
+| ndvi | 19 | 1.00 | 0.73 | 0.16 | -0.16 | 0.64 | 0.80 | 0.85 | 0.99 | ▁▁▂▅▇ |
+| lai | 0 | 1.00 | 4.10 | 1.79 | 0.00 | 2.60 | 4.38 | 5.80 | 6.90 | ▂▅▅▅▇ |
+| lst_amp | 18369 | 0.77 | 6.48 | 2.52 | 0.00 | 4.86 | 6.21 | 7.80 | 25.78 | ▃▇▁▁▁ |
+
 ## FAZER O RIDGE AQUI…
 
 ``` r
@@ -63,7 +91,7 @@ anomalias %>%
   theme_ridges() 
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
 anomalias %>% 
@@ -82,7 +110,7 @@ anomalias %>%
   theme_ridges() 
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ## RIDGE SIF
 
@@ -105,7 +133,7 @@ anomalias %>%
   theme_ridges() 
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ## lendo a Base para o Aprendizado de Máquina
 
@@ -133,7 +161,7 @@ classe_train  %>%
   labs(x="xco2 - treino", y = "Densidade")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
 
@@ -145,7 +173,7 @@ classe_train  %>%
   labs(x="sif - treino", y = "Densidade")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-9-2.png)<!-- -->
 
 ``` r
 
@@ -157,7 +185,7 @@ classe_train  %>%
   labs(x="ndvi - treino", y = "Densidade")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-9-3.png)<!-- -->
 
 ``` r
 
@@ -170,7 +198,7 @@ classe_train  %>%
   labs(x="lai - treino", y = "Densidade")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-8-4.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-9-4.png)<!-- -->
 
 ``` r
 
@@ -183,7 +211,7 @@ classe_train  %>%
   labs(x="lst_amp - treino", y = "Densidade")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-8-5.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-9-5.png)<!-- -->
 
 ``` r
 classe_recipe <- recipe(classe ~ ., 
@@ -211,7 +239,7 @@ bake(prep(classe_recipe), new_data = NULL)
 #>  7  403. 0.891 0.748  2.88    4.36 Con   
 #>  8  402. 1.20  0.681  2       3.82 Con   
 #>  9  402. 1.07  0.547  3.4     7.84 Con   
-#> 10  402. 0.801 0.732  3.6     6.31 Con   
+#> 10  404. 1.49  0.832  4.23    6.71 Con   
 #> # ℹ 3,186 more rows
 ```
 
@@ -219,7 +247,7 @@ bake(prep(classe_recipe), new_data = NULL)
 visdat::vis_miss(bake(prep(classe_recipe), new_data = NULL))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ### Regressão logística
 
@@ -280,7 +308,7 @@ collect_metrics(classe_lr_tune_grid)  |>
   scale_x_log10()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 ``` r
 classe_lr_best_params <- select_best(classe_lr_tune_grid,metric =  "roc_auc")
@@ -302,7 +330,7 @@ vip(classe_lr_last_fit_model,
   theme_bw()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 ``` r
 classe_test_preds_lr <- collect_predictions(classe_lr_last_fit)
@@ -311,7 +339,7 @@ classe_roc_curve_lr <- classe_test_preds_lr %>%
 autoplot(classe_roc_curve_lr)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 ### RNA
 
@@ -325,7 +353,7 @@ classe_nn_model <- mlp(
 NeuralNetTools::plotnet(classe_nn_model$fit)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 ``` r
 classe_resamples <- vfold_cv(classe_train, v = 5)
@@ -381,7 +409,7 @@ area_nn <- collect_metrics(classe_nn_tune_grid)  %>%
 autoplot(classe_nn_tune_grid)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 ``` r
 classe_nn_best_params <- select_best(classe_nn_tune_grid,metric =  "roc_auc")
@@ -403,7 +431,7 @@ vip(classe_nn_last_fit_model,
   theme_bw()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 ``` r
 classe_test_preds_nn <- collect_predictions(classe_nn_last_fit)
@@ -412,7 +440,7 @@ classe_roc_curve_nn <- classe_test_preds_nn %>%
 autoplot(classe_roc_curve_nn)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 ## Comparação
 
@@ -429,4 +457,6 @@ classe_test_preds  |>
   autoplot()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+
+# Trabalhando com a Base da krigagem

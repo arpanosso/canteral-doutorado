@@ -39,6 +39,10 @@ library(vip)
 anomalias <- readr::read_rds("data/anomalias.rds")
 glimpse(anomalias)
 ```
+```{r}
+skimr::skim(anomalias %>% 
+              select(xco2:lst_amp))
+```
 
 ## FAZER O RIDGE AQUI...
 
@@ -360,9 +364,6 @@ classe_test_preds  |>
   autoplot()
 ```
 
-
-```{r}
-
-```
+# Trabalhando com a Base da krigagem
 
 
