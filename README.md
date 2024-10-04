@@ -84,6 +84,29 @@ anomalias %>%
 
 ![](README_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
+## RIDGE SIF
+
+## FAZER O RIDGE AQUI…
+
+``` r
+anomalias %>% 
+  mutate(
+    fct_ano = fct_rev(as.factor(ano)),
+    classe = ifelse(tratamento == "UC_desm" | tratamento == "TI_desm",
+                    "Des","Con")
+    ) %>% 
+  ggplot(aes(y=fct_ano)) +
+  geom_density_ridges(rel_min_height = 0.03,
+    aes(x=sif, fill=classe),
+    alpha = .6, color = "black", from = -.5, to = 1.8
+    ) +
+  scale_fill_cyclical(values = c("#238B45","#ff8080"),
+                      name = "classe", guide = "legend") +
+  theme_ridges() 
+```
+
+![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
 ## lendo a Base para o Aprendizado de Máquina
 
 ``` r
@@ -110,7 +133,7 @@ classe_train  %>%
   labs(x="xco2 - treino", y = "Densidade")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
 
@@ -122,7 +145,7 @@ classe_train  %>%
   labs(x="sif - treino", y = "Densidade")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
 
 ``` r
 
@@ -134,7 +157,7 @@ classe_train  %>%
   labs(x="ndvi - treino", y = "Densidade")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
 
 ``` r
 
@@ -147,7 +170,7 @@ classe_train  %>%
   labs(x="lai - treino", y = "Densidade")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-4.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-8-4.png)<!-- -->
 
 ``` r
 
@@ -160,7 +183,7 @@ classe_train  %>%
   labs(x="lst_amp - treino", y = "Densidade")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-5.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-8-5.png)<!-- -->
 
 ``` r
 classe_recipe <- recipe(classe ~ ., 
@@ -179,14 +202,14 @@ bake(prep(classe_recipe), new_data = NULL)
 #> # A tibble: 3,196 × 6
 #>     xco2   sif  ndvi   lai lst_amp classe
 #>    <dbl> <dbl> <dbl> <dbl>   <dbl> <fct> 
-#>  1  403. 0.8   0.507  1.85    5.83 Con   
-#>  2  398. 0.912 0.866  3.4     5.78 Con   
-#>  3  401. 1.15  0.512  1.12    0.92 Con   
-#>  4  407. 0.393 0.722  2.22    3.26 Con   
-#>  5  402. 1.25  0.764  3.9     3.94 Con   
-#>  6  399. 1.16  0.46   1.62    2.52 Con   
-#>  7  403. 0.891 0.748  2.88    4.36 Con   
-#>  8  402. 1.07  0.547  3.4     7.84 Con   
+#>  1  401. 1.15  0.512  1.12    0.92 Con   
+#>  2  403. 0.939 0.467  1.42    5.76 Con   
+#>  3  402. 1.25  0.764  3.9     3.94 Con   
+#>  4  399. 1.16  0.46   1.62    2.52 Con   
+#>  5  403. 0.891 0.748  2.88    4.36 Con   
+#>  6  402. 1.20  0.681  2       3.82 Con   
+#>  7  402. 1.07  0.547  3.4     7.84 Con   
+#>  8  402. 0.801 0.732  3.6     6.31 Con   
 #>  9  404. 1.49  0.832  4.23    6.71 Con   
 #> 10  404. 0.81  0.797  4.47    4.61 Con   
 #> # ℹ 3,186 more rows
@@ -196,7 +219,7 @@ bake(prep(classe_recipe), new_data = NULL)
 visdat::vis_miss(bake(prep(classe_recipe), new_data = NULL))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ### RNA
 
@@ -210,7 +233,7 @@ classe_nn_model <- mlp(
 NeuralNetTools::plotnet(classe_nn_model$fit)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ``` r
 classe_resamples <- vfold_cv(classe_train, v = 5)
@@ -234,16 +257,16 @@ classe_nn_wf <- workflow()   %>%
 
 ``` r
 grid_nn <- expand.grid(
-  hidden_units = c(1,2),
-  penalty = c(1,5),
-  epochs = c(50, 100)
+  hidden_units = c(1, 2, 3, 5),
+  penalty = c(1, 5, 10, 50),
+  epochs = c(50, 100, 500, 1000)
 )
 glimpse(grid_nn)
-#> Rows: 8
+#> Rows: 64
 #> Columns: 3
-#> $ hidden_units <dbl> 1, 2, 1, 2, 1, 2, 1, 2
-#> $ penalty      <dbl> 1, 1, 5, 5, 1, 1, 5, 5
-#> $ epochs       <dbl> 50, 50, 50, 50, 100, 100, 100, 100
+#> $ hidden_units <dbl> 1, 2, 3, 5, 1, 2, 3, 5, 1, 2, 3, 5, 1, 2, 3, 5, 1, 2, 3, …
+#> $ penalty      <dbl> 1, 1, 1, 1, 5, 5, 5, 5, 10, 10, 10, 10, 50, 50, 50, 50, 1…
+#> $ epochs       <dbl> 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 5…
 ```
 
 ``` r
@@ -266,10 +289,10 @@ area_nn <- collect_metrics(classe_nn_tune_grid)  %>%
 autoplot(classe_nn_tune_grid)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 ``` r
-classe_nn_best_params <- select_best(classe_nn_tune_grid, "roc_auc")
+classe_nn_best_params <- select_best(classe_nn_tune_grid,metric =  "roc_auc")
 classe_nn_wf <- classe_nn_wf  %>%  finalize_workflow(classe_nn_best_params)
 
 classe_nn_last_fit <- last_fit(
@@ -288,7 +311,7 @@ vip(classe_nn_last_fit_model,
   theme_bw()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 ``` r
 classe_test_preds_nn <- collect_predictions(classe_nn_last_fit)
@@ -297,4 +320,4 @@ classe_roc_curve_nn <- classe_test_preds_nn %>%
 autoplot(classe_roc_curve_nn)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->

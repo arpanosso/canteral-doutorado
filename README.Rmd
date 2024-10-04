@@ -77,6 +77,28 @@ anomalias %>%
 ```
 
 
+## RIDGE SIF
+
+## FAZER O RIDGE AQUI...
+
+```{r}
+anomalias %>% 
+  mutate(
+    fct_ano = fct_rev(as.factor(ano)),
+    classe = ifelse(tratamento == "UC_desm" | tratamento == "TI_desm",
+                    "Des","Con")
+    ) %>% 
+  ggplot(aes(y=fct_ano)) +
+  geom_density_ridges(rel_min_height = 0.03,
+    aes(x=sif, fill=classe),
+    alpha = .6, color = "black", from = -.5, to = 1.8
+    ) +
+  scale_fill_cyclical(values = c("#238B45","#ff8080"),
+                      name = "classe", guide = "legend") +
+  theme_ridges() 
+```
+
+
 ## lendo a Base para o Aprendizado de Máquina
 ```{r}
 data_set_ml <- anomalias %>% 
@@ -184,9 +206,9 @@ classe_nn_wf <- workflow()   %>%
 
 ```{r}
 grid_nn <- expand.grid(
-  hidden_units = c(1,2),
-  penalty = c(1,5),
-  epochs = c(50, 100)
+  hidden_units = c(1, 2, 3, 5),
+  penalty = c(1, 5, 10, 50),
+  epochs = c(50, 100, 500, 1000)
 )
 glimpse(grid_nn)
 ```
@@ -212,7 +234,7 @@ autoplot(classe_nn_tune_grid)
 ```
 
 ```{r}
-classe_nn_best_params <- select_best(classe_nn_tune_grid, "roc_auc")
+classe_nn_best_params <- select_best(classe_nn_tune_grid,metric =  "roc_auc")
 classe_nn_wf <- classe_nn_wf  %>%  finalize_workflow(classe_nn_best_params)
 
 classe_nn_last_fit <- last_fit(
