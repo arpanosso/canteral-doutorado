@@ -175,6 +175,92 @@ bake(prep(classe_recipe), new_data = NULL)
 visdat::vis_miss(bake(prep(classe_recipe), new_data = NULL))
 ```
 
+### Regressão logística
+
+```{r}
+classe_lr_model <- logistic_reg(penalty = tune(), mixture = 1)  |> 
+  set_mode("classification") |> 
+  set_engine("glmnet")
+classe_resamples <- vfold_cv(classe_train, v = 5)
+```
+
+
+```{r}
+classe_lr_wf <- workflow()   %>%  
+  add_model(classe_lr_model) %>% 
+  add_recipe(classe_recipe)
+```
+
+```{r}
+grid_lr <- grid_regular(
+  penalty(range = c(-4, -2)),
+  levels = 20
+)
+glimpse(grid_lr)
+```
+
+```{r}
+classe_lr_tune_grid <- tune_grid(
+  classe_lr_wf,
+  resamples = classe_resamples,
+  grid = grid_lr,
+  metrics = metric_set(
+    mn_log_loss, #binary cross entropy
+    accuracy,
+    roc_auc,
+    # kap, # KAPPA
+    # precision,
+    # recall,
+    # f_meas,
+  )
+)
+```
+
+```{r}
+area_lr <- collect_metrics(classe_lr_tune_grid)  %>%  
+  filter(.metric == "roc_auc")  %>%  
+  summarise(area = mean(mean),
+            desvio_pad = mean(std_err))
+```
+
+```{r}
+collect_metrics(classe_lr_tune_grid)  |> 
+  ggplot(aes(x = penalty, y = mean)) +
+  geom_point() +
+  geom_ribbon(aes(ymin = mean - std_err, ymax = mean + std_err), alpha = 0.1) +
+  facet_wrap(~.metric, ncol = 2, scales = "free_y") +
+  scale_x_log10()
+```
+
+```{r}
+classe_lr_best_params <- select_best(classe_lr_tune_grid,metric =  "roc_auc")
+classe_lr_wf <- classe_lr_wf  %>%  finalize_workflow(classe_lr_best_params)
+
+classe_lr_last_fit <- last_fit(
+  classe_lr_wf,
+  classe_initial_split
+)
+
+# Variáveis importantes
+classe_lr_last_fit_model <-classe_lr_last_fit$.workflow[[1]]$fit$fit
+vip(classe_lr_last_fit_model,
+    aesthetics = list(color = "black", fill = "orange")) +
+    theme(axis.text.y=element_text(size=rel(1.5)),
+          axis.text.x=element_text(size=rel(1.5)),
+          axis.title.x=element_text(size=rel(1.5))
+          ) +
+  theme_bw()
+```
+
+```{r}
+classe_test_preds_lr <- collect_predictions(classe_lr_last_fit)
+classe_roc_curve_lr <- classe_test_preds_lr %>%
+  roc_curve(classe, .pred_Con)
+autoplot(classe_roc_curve_lr)
+```
+
+
+
 ### RNA
 
 ```{r}
@@ -259,4 +345,24 @@ classe_roc_curve_nn <- classe_test_preds_nn %>%
   roc_curve(classe, .pred_Con)
 autoplot(classe_roc_curve_nn)
 ```
+
+## Comparação
+```{r}
+classe_test_preds <- bind_rows(
+  collect_predictions(classe_lr_last_fit) |>  mutate(modelo = "lr"),
+  collect_predictions(classe_nn_last_fit) |>  mutate(modelo = "nn")
+)
+
+## roc
+classe_test_preds  |> 
+  group_by(modelo)  |> 
+  roc_curve(classe, .pred_Con)  |> 
+  autoplot()
+```
+
+
+```{r}
+
+```
+
 

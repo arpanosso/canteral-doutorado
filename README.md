@@ -204,14 +204,14 @@ bake(prep(classe_recipe), new_data = NULL)
 #>    <dbl> <dbl> <dbl> <dbl>   <dbl> <fct> 
 #>  1  401. 1.15  0.512  1.12    0.92 Con   
 #>  2  403. 0.939 0.467  1.42    5.76 Con   
-#>  3  402. 1.25  0.764  3.9     3.94 Con   
-#>  4  399. 1.16  0.46   1.62    2.52 Con   
-#>  5  403. 0.891 0.748  2.88    4.36 Con   
-#>  6  402. 1.20  0.681  2       3.82 Con   
-#>  7  402. 1.07  0.547  3.4     7.84 Con   
-#>  8  402. 0.801 0.732  3.6     6.31 Con   
-#>  9  404. 1.49  0.832  4.23    6.71 Con   
-#> 10  404. 0.81  0.797  4.47    4.61 Con   
+#>  3  407. 0.393 0.722  2.22    3.26 Con   
+#>  4  402. 1.25  0.764  3.9     3.94 Con   
+#>  5  400. 1.16  0.624  3.12    3.17 Con   
+#>  6  399. 1.16  0.46   1.62    2.52 Con   
+#>  7  403. 0.891 0.748  2.88    4.36 Con   
+#>  8  402. 1.20  0.681  2       3.82 Con   
+#>  9  402. 1.07  0.547  3.4     7.84 Con   
+#> 10  402. 0.801 0.732  3.6     6.31 Con   
 #> # ℹ 3,186 more rows
 ```
 
@@ -220,6 +220,98 @@ visdat::vis_miss(bake(prep(classe_recipe), new_data = NULL))
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+### Regressão logística
+
+``` r
+classe_lr_model <- logistic_reg(penalty = tune(), mixture = 1)  |> 
+  set_mode("classification") |> 
+  set_engine("glmnet")
+classe_resamples <- vfold_cv(classe_train, v = 5)
+```
+
+``` r
+classe_lr_wf <- workflow()   %>%  
+  add_model(classe_lr_model) %>% 
+  add_recipe(classe_recipe)
+```
+
+``` r
+grid_lr <- grid_regular(
+  penalty(range = c(-4, -2)),
+  levels = 20
+)
+glimpse(grid_lr)
+#> Rows: 20
+#> Columns: 1
+#> $ penalty <dbl> 0.0001000000, 0.0001274275, 0.0001623777, 0.0002069138, 0.0002…
+```
+
+``` r
+classe_lr_tune_grid <- tune_grid(
+  classe_lr_wf,
+  resamples = classe_resamples,
+  grid = grid_lr,
+  metrics = metric_set(
+    mn_log_loss, #binary cross entropy
+    accuracy,
+    roc_auc,
+    # kap, # KAPPA
+    # precision,
+    # recall,
+    # f_meas,
+  )
+)
+```
+
+``` r
+area_lr <- collect_metrics(classe_lr_tune_grid)  %>%  
+  filter(.metric == "roc_auc")  %>%  
+  summarise(area = mean(mean),
+            desvio_pad = mean(std_err))
+```
+
+``` r
+collect_metrics(classe_lr_tune_grid)  |> 
+  ggplot(aes(x = penalty, y = mean)) +
+  geom_point() +
+  geom_ribbon(aes(ymin = mean - std_err, ymax = mean + std_err), alpha = 0.1) +
+  facet_wrap(~.metric, ncol = 2, scales = "free_y") +
+  scale_x_log10()
+```
+
+![](README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+
+``` r
+classe_lr_best_params <- select_best(classe_lr_tune_grid,metric =  "roc_auc")
+classe_lr_wf <- classe_lr_wf  %>%  finalize_workflow(classe_lr_best_params)
+
+classe_lr_last_fit <- last_fit(
+  classe_lr_wf,
+  classe_initial_split
+)
+
+# Variáveis importantes
+classe_lr_last_fit_model <-classe_lr_last_fit$.workflow[[1]]$fit$fit
+vip(classe_lr_last_fit_model,
+    aesthetics = list(color = "black", fill = "orange")) +
+    theme(axis.text.y=element_text(size=rel(1.5)),
+          axis.text.x=element_text(size=rel(1.5)),
+          axis.title.x=element_text(size=rel(1.5))
+          ) +
+  theme_bw()
+```
+
+![](README_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+
+``` r
+classe_test_preds_lr <- collect_predictions(classe_lr_last_fit)
+classe_roc_curve_lr <- classe_test_preds_lr %>%
+  roc_curve(classe, .pred_Con)
+autoplot(classe_roc_curve_lr)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 ### RNA
 
@@ -233,7 +325,7 @@ classe_nn_model <- mlp(
 NeuralNetTools::plotnet(classe_nn_model$fit)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 ``` r
 classe_resamples <- vfold_cv(classe_train, v = 5)
@@ -289,7 +381,7 @@ area_nn <- collect_metrics(classe_nn_tune_grid)  %>%
 autoplot(classe_nn_tune_grid)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
 ``` r
 classe_nn_best_params <- select_best(classe_nn_tune_grid,metric =  "roc_auc")
@@ -311,7 +403,7 @@ vip(classe_nn_last_fit_model,
   theme_bw()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 ``` r
 classe_test_preds_nn <- collect_predictions(classe_nn_last_fit)
@@ -320,4 +412,21 @@ classe_roc_curve_nn <- classe_test_preds_nn %>%
 autoplot(classe_roc_curve_nn)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+
+## Comparação
+
+``` r
+classe_test_preds <- bind_rows(
+  collect_predictions(classe_lr_last_fit) |>  mutate(modelo = "lr"),
+  collect_predictions(classe_nn_last_fit) |>  mutate(modelo = "nn")
+)
+
+## roc
+classe_test_preds  |> 
+  group_by(modelo)  |> 
+  roc_curve(classe, .pred_Con)  |> 
+  autoplot()
+```
+
+![](README_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
